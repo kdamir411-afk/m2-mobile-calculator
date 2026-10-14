@@ -1,5 +1,5 @@
-const CACHE = "m2-mobile-v5";
-const CORE = ["./", "./index.html", "./manifest.json"];
+const CACHE = "m2-mobile-v6";
+const CORE = ["./", "./index.html", "./manifest.json", "./access.js"];
 const cleanHtml = html => html.replace('placeholder="Например: Дамир 6303"', 'placeholder=""');
 
 self.addEventListener("install", event => {
@@ -9,6 +9,8 @@ self.addEventListener("install", event => {
     await cache.put("./index.html", new Response(html, {headers:{"Content-Type":"text/html; charset=utf-8"}}));
     const manifest = await fetch("./manifest.json", {cache:"no-store"});
     await cache.put("./manifest.json", manifest);
+    const access = await fetch("./access.js?v=3", {cache:"no-store"});
+    await cache.put("./access.js?v=3", access);
   }));
   self.skipWaiting();
 });
@@ -30,7 +32,7 @@ self.addEventListener("fetch", event => {
     }).catch(() => caches.match("./index.html")));
     return;
   }
-  event.respondWith(fetch(event.request).then(response => {
+  event.respondWith(fetch(event.request,{cache:"no-store"}).then(response => {
     const copy = response.clone();
     caches.open(CACHE).then(cache => cache.put(event.request, copy)).catch(()=>{});
     return response;
