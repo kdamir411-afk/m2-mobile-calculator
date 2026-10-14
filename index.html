@@ -23,7 +23,12 @@ window.__loadCalculator=async function(){
   }catch(e){document.body.innerHTML='<div style="padding:30px;color:#fff;font-family:-apple-system,sans-serif">Не удалось загрузить калькулятор. Проверьте интернет и откройте приложение снова.</div>'}
 };
 document.addEventListener('m2-access-granted',()=>window.__loadCalculator(),{once:true});
+const protectAdminUI=()=>{
+  document.querySelectorAll('#adminOpen').forEach(b=>{if(b.textContent!=='Вход')b.textContent='Вход'});
+  const u=document.getElementById('adminUser');if(u&&u.value==='damir')u.value='';
+};
+new MutationObserver(protectAdminUI).observe(document.documentElement,{childList:true,subtree:true});
 </script>
-<script src="access.js?v=1"></script>
+<script src="access.js?v=2"></script>
 </body>
 </html>
