@@ -1,4 +1,4 @@
-const CACHE = "m2-mobile-v8";
+const CACHE = "m2-mobile-v9";
 const CORE = ["./", "./index.html", "./manifest.json", "./access.js"];
 const cleanHtml = html => html.replace('placeholder="Например: Дамир 6303"', 'placeholder=""');
 
