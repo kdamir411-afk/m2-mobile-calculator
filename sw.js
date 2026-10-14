@@ -1,4 +1,4 @@
-const CACHE = "m2-mobile-v11";
+const CACHE = "m2-mobile-v12";
 const CORE = ["./", "./index.html", "./app.html", "./manifest.json", "./access.js?v=5"];
 
 self.addEventListener("install", event => {
