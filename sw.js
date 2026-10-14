@@ -1,4 +1,4 @@
-const CACHE = "m2-mobile-v7";
+const CACHE = "m2-mobile-v8";
 const CORE = ["./", "./index.html", "./manifest.json", "./access.js"];
 const cleanHtml = html => html.replace('placeholder="Например: Дамир 6303"', 'placeholder=""');
 
@@ -9,8 +9,8 @@ self.addEventListener("install", event => {
     await cache.put("./index.html", new Response(html, {headers:{"Content-Type":"text/html; charset=utf-8"}}));
     const manifest = await fetch("./manifest.json", {cache:"no-store"});
     await cache.put("./manifest.json", manifest);
-    const access = await fetch("./access.js?v=4", {cache:"no-store"});
-    await cache.put("./access.js?v=4", access);
+    const access = await fetch("./access.js?v=5", {cache:"no-store"});
+    await cache.put("./access.js?v=5", access);
   }));
   self.skipWaiting();
 });
