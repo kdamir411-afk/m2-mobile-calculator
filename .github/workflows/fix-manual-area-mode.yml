@@ -27,7 +27,6 @@ jobs:
           p = Path('app.html')
           s = p.read_text()
 
-          # "По площади" снова отдельный режим: пользователь вводит м² напрямую.
           s = s.replace(
               "function blankFloor(){return{title:'',length:0,width:0,product:-1,discount:0}}",
               "function blankFloor(){return{title:'',area:0,product:-1,discount:0}}"
@@ -46,12 +45,10 @@ jobs:
           if n != 1:
               raise SystemExit('renderFloor patch failed')
 
-          # Высота/ширина/скидка: визуальный 0 через placeholder, само поле пустое.
           s = s.replace('value="${safe(x.height)}"', 'value="${x.height?x.height:\'\'}" placeholder="0"')
           s = s.replace('value="${safe(x.width)}"', 'value="${x.width?x.width:\'\'}" placeholder="0"')
           s = s.replace('value="${safe(x.discount)}"', 'value="${x.discount?x.discount:\'\'}" placeholder="0"')
 
-          # Снимок/копирование/история для ручной площади.
           s = s.replace(
               "const p=z.productSnapshot||productObj(z.product)||{name:'',category:'',price:0},area=x.type==='wall'?safe(z.height)*safe(z.width):safe(z.length)*safe(z.width)",
               "const p=z.productSnapshot||productObj(z.product)||{name:'',category:'',price:0},area=x.type==='wall'?safe(z.height)*safe(z.width):safe(z.area)"
@@ -74,24 +71,19 @@ jobs:
           if n != 1:
               raise SystemExit('floor events patch failed')
 
-          # Убираем старую механику выделения настоящего нуля.
           s = re.sub(r"document\.addEventListener\('focusin'.*?\);(?=persist\(\);)", '', s, count=1, flags=re.S)
 
           p.write_text(s)
 
           sw = Path('sw.js')
-          t = sw.read_text().replace('m2-mobile-v12', 'm2-mobile-v13')
-          sw.write_text(t)
-          PY
+          sw.write_text(sw.read_text().replace('m2-mobile-v12', 'm2-mobile-v13'))
 
-          node --check <(python3 - <<'PY'
-          from pathlib import Path
-          s=Path('app.html').read_text()
           a=s.index('<script>')+len('<script>')
           b=s.rindex('</script>')
-          print(s[a:b])
+          Path('/tmp/app.js').write_text(s[a:b])
           PY
-          )
+
+          node --check /tmp/app.js
 
       - name: Commit fix
         shell: bash
