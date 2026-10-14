@@ -15,7 +15,7 @@
 <script>
 window.__loadCalculator=async function(){
   try{
-    const r=await fetch('https://raw.githubusercontent.com/kdamir411-afk/m2-mobile-calculator/b6799217619d0fab7a2925aa1538deefbab11ba4/index.html',{cache:'no-store'});
+    const r=await fetch('./app.html',{cache:'no-store'});
     if(!r.ok)throw new Error('load');
     let html=await r.text();
     html=html.replace('placeholder="Например: Дамир 6303"','placeholder=""');
