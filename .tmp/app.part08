@@ -1,4 +1,0 @@
-istory.splice(+d.dataset.delhist,1);persist();showTab('history')}};$('modalCancel').onclick=()=>{$('modal').classList.add('hidden');pendingSave=null};$('modalSave').onclick=finishSave;$('modal').onclick=e=>{if(e.target===$('modal')){$('modal').classList.add('hidden');pendingSave=null}};
-persist();renderSettings();renderHistory();renderCalc();showTab('calc');if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
-})();
-</script></body></html>
