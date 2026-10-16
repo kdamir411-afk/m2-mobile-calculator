@@ -47,6 +47,15 @@ function weakest(t){const steps=[
   ['payments','calculations','расчёт → оплата']
 ];let best=null;for(const [a,b,label] of steps){if(t[b]<=0)continue;const rate=(t[a]/t[b])*100;if(!best||rate<best.rate)best={label,rate}}return best}
 function periodLabel(){if(view==='today')return 'Сегодня';if(view==='week')return 'Неделя';return 'Месяц'}
+function reportText(d){
+  const date=new Date().toLocaleDateString('ru-RU');
+  return [`РНП — ${date}`,'',`Новые звонки: ${clampCount(d.newCalls)}`,`Результативные звонки: ${clampCount(d.productiveCalls)}`,`Переписки: ${clampCount(d.chats)}`,`Назначено встреч: ${clampCount(d.meetingsSet)}`,`Проведено встреч: ${clampCount(d.meetingsDone)}`,`Расчёты: ${clampCount(d.calculations)}`,`Оплаты: ${clampCount(d.payments)}`,`Сумма продаж: ${money(d.sales)} ₸`].join('\n')
+}
+async function copyReport(){
+  const text=reportText(getDay(today()));
+  try{await navigator.clipboard.writeText(text)}catch{const a=document.createElement('textarea');a.value=text;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.focus();a.select();document.execCommand('copy');a.remove()}
+  const b=document.getElementById('rnpCopyReport');if(b){const old=b.textContent;b.textContent='Скопировано';setTimeout(()=>{if(document.body.contains(b))b.textContent=old},1200)}
+}
 
 function inject(){
   if(document.getElementById('rnpScreen'))return;
@@ -106,6 +115,7 @@ function todayEditor(d){
     <div class="card"><div class="settingtitle">Продажи</div><label>Сумма продаж за сегодня, ₸</label><input id="rnpSales" class="rnpsalesinput" type="number" inputmode="numeric" min="0" step="1000" value="${Math.round(safe(d.sales))}">
       ${salesGoal?`<div class="line"><span class="small">План ${money(salesGoal)} ₸</span><b>${salesProgress}%</b></div><div class="rnpprogress"><i style="width:${salesProgress}%"></i></div>`:''}
       <div style="margin-top:14px"><div class="small" style="margin-bottom:6px">Быстро добавить оплату</div><div class="rnppay"><input id="rnpPayAmount" type="number" inputmode="numeric" min="0" step="1000" placeholder="Сумма, ₸"><button id="rnpAddPayment">+ Оплата</button></div></div>
+      <div class="actions"><button id="rnpCopyReport" class="secondary">Скопировать</button></div>
     </div>`;
 }
 function metricRow(id,label,value){const g=safe(goals[id]);return `<div class="rnprow"><div><div class="rnpname">${label}${id==='calculations'?'<span class="rnpgoal"> · сохранённые считаются автоматически</span>':''}</div><div class="rnpgoal">${g?'Цель: '+money(g):'Цель не задана'}</div></div><div class="rnpcounter"><button class="secondary" data-rnp-adjust="${id}" data-delta="-1">−</button><div class="rnpvalue">${clampCount(value)}</div><button data-rnp-adjust="${id}" data-delta="1">+</button></div></div>`}
@@ -126,6 +136,7 @@ function bindScreen(){
   document.querySelectorAll('[data-rnp-adjust]').forEach(b=>b.onclick=()=>{const k=today(),d=getDay(k),id=b.dataset.rnpAdjust;d[id]=clampCount(d[id]+Number(b.dataset.delta));setDay(k,d);render()});
   const sales=document.getElementById('rnpSales');if(sales)sales.onchange=()=>{const k=today(),d=getDay(k);d.sales=safe(sales.value);setDay(k,d);render()};
   const add=document.getElementById('rnpAddPayment');if(add)add.onclick=()=>{const input=document.getElementById('rnpPayAmount'),amount=safe(input?.value);if(!amount){input?.focus();return}const k=today(),d=getDay(k);d.payments=clampCount(d.payments+1);d.sales=safe(d.sales)+amount;setDay(k,d);render()};
+  const copyBtn=document.getElementById('rnpCopyReport');if(copyBtn)copyBtn.onclick=copyReport;
   const toggle=document.getElementById('rnpGoalsToggle');if(toggle)toggle.onclick=()=>document.getElementById('rnpGoalsBox')?.classList.toggle('hidden');
   document.querySelectorAll('[data-rnp-goal]').forEach(i=>i.onchange=()=>{goals[i.dataset.rnpGoal]=safe(i.value);saveGoals();render()});
 }
