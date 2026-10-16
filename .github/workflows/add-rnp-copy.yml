@@ -1,0 +1,54 @@
+name: Add RNP copy
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/add-rnp-copy.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('rnp-admin.js')
+          s=p.read_text(encoding='utf-8')
+
+          marker="function periodLabel(){if(view==='today')return 'Сегодня';if(view==='week')return 'Неделя';return 'Месяц'}\n"
+          add=r'''function reportText(d){
+  const date=new Date().toLocaleDateString('ru-RU');
+  return [`РНП — ${date}`,'',`Новые звонки: ${clampCount(d.newCalls)}`,`Результативные звонки: ${clampCount(d.productiveCalls)}`,`Переписки: ${clampCount(d.chats)}`,`Назначено встреч: ${clampCount(d.meetingsSet)}`,`Проведено встреч: ${clampCount(d.meetingsDone)}`,`Расчёты: ${clampCount(d.calculations)}`,`Оплаты: ${clampCount(d.payments)}`,`Сумма продаж: ${money(d.sales)} ₸`].join('\n')
+}
+async function copyReport(){
+  const text=reportText(getDay(today()));
+  try{await navigator.clipboard.writeText(text)}catch{const a=document.createElement('textarea');a.value=text;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.focus();a.select();document.execCommand('copy');a.remove()}
+  const b=document.getElementById('rnpCopyReport');if(b){const old=b.textContent;b.textContent='Скопировано';setTimeout(()=>{if(document.body.contains(b))b.textContent=old},1200)}
+}
+'''
+          if 'function reportText(d)' not in s:
+              s=s.replace(marker, marker+add, 1)
+
+          old='''      <div style="margin-top:14px"><div class="small" style="margin-bottom:6px">Быстро добавить оплату</div><div class="rnppay"><input id="rnpPayAmount" type="number" inputmode="numeric" min="0" step="1000" placeholder="Сумма, ₸"><button id="rnpAddPayment">+ Оплата</button></div></div>\n    </div>`;'''
+          new='''      <div style="margin-top:14px"><div class="small" style="margin-bottom:6px">Быстро добавить оплату</div><div class="rnppay"><input id="rnpPayAmount" type="number" inputmode="numeric" min="0" step="1000" placeholder="Сумма, ₸"><button id="rnpAddPayment">+ Оплата</button></div></div>\n      <div class="actions"><button id="rnpCopyReport" class="secondary">Скопировать</button></div>\n    </div>`;'''
+          if 'id="rnpCopyReport"' not in s:
+              s=s.replace(old,new,1)
+
+          bind="  const toggle=document.getElementById('rnpGoalsToggle');if(toggle)toggle.onclick=()=>document.getElementById('rnpGoalsBox')?.classList.toggle('hidden');\n"
+          if 'copyBtn.onclick=copyReport' not in s:
+              s=s.replace(bind,"  const copyBtn=document.getElementById('rnpCopyReport');if(copyBtn)copyBtn.onclick=copyReport;\n"+bind,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate
+        run: node --check rnp-admin.js
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rnp-admin.js
+          git diff --cached --quiet || (git commit -m "Add RNP copy button" && git push)
