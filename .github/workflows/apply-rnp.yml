@@ -1,0 +1,70 @@
+name: Apply RNP admin integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-rnp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch admin loader and offline cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          old = "html=html.replace('</body>',adminJs+'</body>');"
+          new = "html=html.replace('</body>',adminJs+'<script src=\"./rnp-admin.js?v=1\"><\\/script></body>');"
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif 'rnp-admin.js?v=1' not in text:
+              raise SystemExit('Expected admin loader line not found')
+          index.write_text(text, encoding='utf-8')
+
+          sw = Path('sw.js')
+          text = sw.read_text(encoding='utf-8')
+          text = text.replace('const CACHE = "m2-mobile-v17";', 'const CACHE = "m2-mobile-v18";', 1)
+          old_core = 'const CORE = ["./", "./index.html", "./app.html", "./manifest.json", "./access.js?v=5"];'
+          new_core = 'const CORE = ["./", "./index.html", "./app.html", "./manifest.json", "./access.js?v=5", "./rnp-admin.js?v=1"];'
+          if old_core in text:
+              text = text.replace(old_core, new_core, 1)
+          elif 'rnp-admin.js?v=1' not in text:
+              raise SystemExit('Expected service worker core list not found')
+          sw.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Validate JavaScript
+        run: |
+          node --check rnp-admin.js
+          node --check sw.js
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text = Path('index.html').read_text(encoding='utf-8')
+          match = re.search(r'<script>\n(.*?)\n</script>', text, re.S)
+          if not match:
+              raise SystemExit('Inline loader script not found')
+          Path('/tmp/index-inline.js').write_text(match.group(1), encoding='utf-8')
+          PY
+          node --check /tmp/index-inline.js
+
+      - name: Commit integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html sw.js
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git commit -m "Integrate admin RNP tracker"
+          git push
