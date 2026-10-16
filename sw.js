@@ -1,5 +1,5 @@
-const CACHE = "m2-mobile-v17";
-const CORE = ["./", "./index.html", "./app.html", "./manifest.json", "./access.js?v=5"];
+const CACHE = "m2-mobile-v18";
+const CORE = ["./", "./index.html", "./app.html", "./manifest.json", "./access.js?v=5", "./rnp-admin.js?v=1"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(async cache => {
